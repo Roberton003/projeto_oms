@@ -130,18 +130,24 @@ def automate_github_push():
         print(f"Não foi possível criar ou verificar o repositório no GitHub. Erro: {e}")
         return
 
-    # 2. Adicionar todos os arquivos ao stage
-    print("\n2. Adicionando todos os arquivos modificados/novos ao stage...")
-    run_command(["git", "add", "."], cwd=project_root)
-    run_command(["git", "status"], cwd=project_root) # Mostrar o que foi adicionado
+    # Check for pending changes
+    status_output = subprocess.run(["git", "status", "--porcelain"], cwd=project_root, capture_output=True, text=True).stdout.strip()
 
-    # 3. Solicitar mensagem de commit
-    commit_message = input("\n3. Digite a mensagem do commit (obrigatório): ")
-    while not commit_message:
-        commit_message = input("A mensagem do commit não pode ser vazia. Digite a mensagem do commit: ")
+    if status_output:
+        # 2. Adicionar todos os arquivos ao stage
+        print("\n2. Adicionando todos os arquivos modificados/novos ao stage...")
+        run_command(["git", "add", "."], cwd=project_root)
+        run_command(["git", "status"], cwd=project_root) # Mostrar o que foi adicionado
 
-    print(f"Realizando commit com a mensagem: '{commit_message}'...")
-    run_command(["git", "commit", "-m", commit_message], cwd=project_root)
+        # 3. Solicitar mensagem de commit
+        commit_message = input("\n3. Digite a mensagem do commit (obrigatório): ")
+        while not commit_message:
+            commit_message = input("A mensagem do commit não pode ser vazia. Digite a mensagem do commit: ")
+
+        print(f"Realizando commit com a mensagem: '{commit_message}'...")
+        run_command(["git", "commit", "-m", commit_message], cwd=project_root)
+    else:
+        print("\nNão há alterações pendentes para comitar. Prosseguindo para o push.")
 
     # 4. Verificar e configurar o repositório remoto
     print("\n4. Verificando configuração do repositório remoto...")
