@@ -28,7 +28,21 @@ def run_command(command: list[str], cwd: str = None, input_data: str = None):
         print(f"Erro: Comando '{command[0]}' não encontrado. Certifique-se de que o Git está instalado e no PATH.")
         raise
 
-def create_github_repository(repo_name: str, github_token: str, is_private: bool = False):
+def get_github_username(github_token: str):
+    """Obtém o nome de usuário do GitHub a partir do PAT."""
+    headers = {
+        "Authorization": f"token {github_token}",
+        "Accept": "application/vnd.github.v3+json"
+    }
+    try:
+        response = requests.get("https://api.github.com/user", headers=headers)
+        response.raise_for_status()
+        return response.json()["login"]
+    except requests.exceptions.RequestException as e:
+        print(f"Erro ao obter nome de usuário do GitHub: {e}")
+        raise
+
+def create_github_repository(repo_name: str, github_token: str, github_username: str, is_private: bool = False):
     """Cria um novo repositório no GitHub via API."""
     headers = {
         "Authorization": f"token {github_token}",
@@ -43,7 +57,7 @@ def create_github_repository(repo_name: str, github_token: str, is_private: bool
     print(f"Tentando criar o repositório '{repo_name}' no GitHub...")
     try:
         response = requests.post("https://api.github.com/user/repos", headers=headers, data=json.dumps(data))
-        response.raise_for_status() # Levanta um erro para códigos de status HTTP ruins (4xx ou 5xx) 
+        response.raise_for_status() # Levanta um erro para códigos de status HTTP ruins (4xx ou 5xx)
         
         repo_info = response.json()
         print(f"Repositório '{repo_name}' criado com sucesso! URL: {repo_info['html_url']}")
@@ -51,14 +65,8 @@ def create_github_repository(repo_name: str, github_token: str, is_private: bool
     except requests.exceptions.HTTPError as e:
         if e.response.status_code == 422 and "name already exists on this account" in e.response.text:
             print(f"Aviso: Repositório '{repo_name}' já existe na sua conta do GitHub. Prosseguindo...")
-            # Se o repositório já existe, tentamos obter a URL para continuar
-            try:
-                response = requests.get(f"https://api.github.com/repos/{{os.environ.get('GITHUB_USERNAME') or ''}}/{repo_name}", headers=headers)
-                response.raise_for_status()
-                return response.json()['html_url']
-            except requests.exceptions.RequestException as get_e:
-                print(f"Erro ao tentar obter URL do repositório existente: {get_e}")
-                raise
+            # Se o repositório já existe, construímos a URL com o username obtido
+            return f"https://github.com/{github_username}/{repo_name}.git"
         else:
             print(f"Erro ao criar repositório no GitHub: {e}")
             print(f"Resposta da API: {e.response.text}")
@@ -78,6 +86,13 @@ def automate_github_push():
         print("Por favor, defina a variável de ambiente GITHUB_TOKEN com seu Personal Access Token do GitHub.")
         print("Exemplo (Linux/macOS): export GITHUB_TOKEN=\"seu_token_aqui\"")
         print("Veja como gerar um PAT aqui: https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token")
+        return
+
+    try:
+        github_username = get_github_username(github_token)
+        print(f"Autenticado como usuário GitHub: {github_username}")
+    except Exception as e:
+        print(f"Não foi possível obter o nome de usuário do GitHub. Verifique seu PAT e conexão. Erro: {e}")
         return
 
     # 1. Verificar status do Git
@@ -105,7 +120,7 @@ def automate_github_push():
 
     # Tentar criar o repositório no GitHub
     try:
-        github_repo_url = create_github_repository(repo_name, github_token, is_private)
+        github_repo_url = create_github_repository(repo_name, github_token, github_username, is_private)
     except Exception as e:
         print(f"Não foi possível criar ou verificar o repositório no GitHub. Erro: {e}")
         return
@@ -133,8 +148,6 @@ def automate_github_push():
         pass # Não há remoto 'origin' para remover, o que é esperado na primeira vez
 
     # Adicionar o repositório remoto
-    # Usamos a URL retornada pela API de criação
-    # A URL retornada pela API é a mais limpa: github_repo_url
     print(f"Adicionando repositório remoto: {github_repo_url}...")
     run_command(["git", "remote", "add", "origin", github_repo_url], cwd=project_root)
 
