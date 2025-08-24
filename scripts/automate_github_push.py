@@ -20,10 +20,15 @@ def run_command(command: list[str], cwd: str = None, input_data: str = None):
             print(f"Erro (stderr):\n{process.stderr}")
         return process.stdout
     except subprocess.CalledProcessError as e:
-        print(f"Erro ao executar comando: {' '.join(e.cmd)}")
-        print(f"Stdout: {e.stdout}")
-        print(f"Stderr: {e.stderr}")
-        raise
+        # Special handling for 'git commit' when there's nothing to commit
+        if command[0] == "git" and command[1] == "commit" and "nothing to commit" in e.stderr:
+            print("Aviso: Não há nada para comitar. Prosseguindo com o push se houver alterações remotas pendentes.")
+            return e.stdout # Return stdout to allow script to continue
+        else:
+            print(f"Erro ao executar comando: {' '.join(e.cmd)}")
+            print(f"Stdout: {e.stdout}")
+            print(f"Stderr: {e.stderr}")
+            raise
     except FileNotFoundError:
         print(f"Erro: Comando '{command[0]}' não encontrado. Certifique-se de que o Git está instalado e no PATH.")
         raise
