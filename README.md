@@ -1,6 +1,6 @@
 # Projeto de Engenharia de Dados: Data Warehouse da OMS
 
-## Objetivo
+## Objetivo do Projeto
 
 O objetivo principal deste projeto é executar uma tarefa completa de engenharia de dados, projetando e construindo um Data Warehouse robusto e escalável. Este Data Warehouse será populado com dados da API do Observatório de Saúde Global (GHO) da Organização Mundial da Saúde (OMS).
 
