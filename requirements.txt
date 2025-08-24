@@ -1,0 +1,6 @@
+pandas
+requests
+great-expectations
+sqlalchemy
+tenacity
+apache-airflow
