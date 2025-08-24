@@ -146,3 +146,7 @@ Este projeto foi expandido para demonstrar a aplicação prática de diversos co
 *   **Governança de Dados e Metadados (Docstrings e Type Hinting):**
     *   **Conceito:** Melhoria da clareza, manutenibilidade e documentação interna do código para facilitar o entendimento e a gestão dos dados.
     *   **Demonstração:** Adição de docstrings e type hints em funções e parâmetros no script de população do banco de dados (`scripts/populate_database.py`).
+
+## Solução de Problemas
+
+Para detalhes sobre problemas comuns encontrados durante o desenvolvimento e suas soluções, consulte o arquivo [TROUBLESHOOTING.md](TROUBLESHOOTING.md).
