@@ -1,0 +1,182 @@
+{
+    "dim_indicators": [
+        {
+            "cid": 0,
+            "name": "indicator_id",
+            "type": "INTEGER",
+            "notnull": false,
+            "dflt_value": null,
+            "pk": true
+        },
+        {
+            "cid": 1,
+            "name": "indicator_code",
+            "type": "TEXT",
+            "notnull": false,
+            "dflt_value": null,
+            "pk": false
+        },
+        {
+            "cid": 2,
+            "name": "indicator_name",
+            "type": "TEXT",
+            "notnull": false,
+            "dflt_value": null,
+            "pk": false
+        },
+        {
+            "cid": 3,
+            "name": "category",
+            "type": "TEXT",
+            "notnull": false,
+            "dflt_value": null,
+            "pk": false
+        }
+    ],
+    "sqlite_sequence": [
+        {
+            "cid": 0,
+            "name": "name",
+            "type": "",
+            "notnull": false,
+            "dflt_value": null,
+            "pk": false
+        },
+        {
+            "cid": 1,
+            "name": "seq",
+            "type": "",
+            "notnull": false,
+            "dflt_value": null,
+            "pk": false
+        }
+    ],
+    "dim_locations": [
+        {
+            "cid": 0,
+            "name": "location_id",
+            "type": "INTEGER",
+            "notnull": false,
+            "dflt_value": null,
+            "pk": true
+        },
+        {
+            "cid": 1,
+            "name": "country_code",
+            "type": "TEXT",
+            "notnull": false,
+            "dflt_value": null,
+            "pk": false
+        },
+        {
+            "cid": 2,
+            "name": "country_name",
+            "type": "TEXT",
+            "notnull": false,
+            "dflt_value": null,
+            "pk": false
+        },
+        {
+            "cid": 3,
+            "name": "region_code",
+            "type": "TEXT",
+            "notnull": false,
+            "dflt_value": null,
+            "pk": false
+        }
+    ],
+    "dim_periods": [
+        {
+            "cid": 0,
+            "name": "period_id",
+            "type": "INTEGER",
+            "notnull": false,
+            "dflt_value": null,
+            "pk": true
+        },
+        {
+            "cid": 1,
+            "name": "year",
+            "type": "INTEGER",
+            "notnull": false,
+            "dflt_value": null,
+            "pk": false
+        }
+    ],
+    "dim_sex": [
+        {
+            "cid": 0,
+            "name": "sex_id",
+            "type": "INTEGER",
+            "notnull": false,
+            "dflt_value": null,
+            "pk": true
+        },
+        {
+            "cid": 1,
+            "name": "sex_code",
+            "type": "TEXT",
+            "notnull": false,
+            "dflt_value": null,
+            "pk": false
+        },
+        {
+            "cid": 2,
+            "name": "sex_name",
+            "type": "TEXT",
+            "notnull": false,
+            "dflt_value": null,
+            "pk": false
+        }
+    ],
+    "fact_observations": [
+        {
+            "cid": 0,
+            "name": "observation_id",
+            "type": "INTEGER",
+            "notnull": false,
+            "dflt_value": null,
+            "pk": true
+        },
+        {
+            "cid": 1,
+            "name": "indicator_id",
+            "type": "INTEGER",
+            "notnull": false,
+            "dflt_value": null,
+            "pk": false
+        },
+        {
+            "cid": 2,
+            "name": "location_id",
+            "type": "INTEGER",
+            "notnull": false,
+            "dflt_value": null,
+            "pk": false
+        },
+        {
+            "cid": 3,
+            "name": "period_id",
+            "type": "INTEGER",
+            "notnull": false,
+            "dflt_value": null,
+            "pk": false
+        },
+        {
+            "cid": 4,
+            "name": "sex_id",
+            "type": "INTEGER",
+            "notnull": false,
+            "dflt_value": null,
+            "pk": false
+        },
+        {
+            "cid": 5,
+            "name": "value",
+            "type": "REAL",
+            "notnull": false,
+            "dflt_value": null,
+            "pk": false
+        }
+    ]
+}
