@@ -2,3 +2,29 @@ linkedin_post.txt
 simple_auth_manager_passwords.json.generated
 database/who_gho.db
 populate_database.log
+scripts/html_to_jpeg.py
+diagram.html
+pipeline_diagram.jpeg
+
+# --- Regras Adicionadas ---
+
+# Pasta para arquivos locais/ignorados
+arquivos_ignorados/
+
+# Ambiente virtual do Python
+venv/
+
+# Arquivos de cache e compilados do Python
+__pycache__/
+*.pyc
+
+# Arquivos de log
+*.log
+
+# Arquivos de configuração e banco de dados do Airflow
+airflow.cfg
+airflow.db*
+
+# Arquivos não versionados do Great Expectations
+great_expectations/uncommitted/
+gx/
