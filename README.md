@@ -161,13 +161,33 @@ make test
 | `make schedule` | Executa o pipeline agendado com logging |
 | `make shell` | Abre DuckDB shell no banco do target atual |
 
-### CI/CD
+### CI/CD Pipeline
 
 ```bash
 make ci
 ```
 
-O target `ci` cria um banco SQLite sintético (10 observações), limpa artefatos anteriores e executa `dbt build --target ci`. O mesmo fluxo roda no GitHub Actions a cada push.
+O target `ci` executa: init_test_db → clean → deps → build → health_check.
+
+No GitHub Actions, o pipeline completo roda a cada push com **6 gates**:
+
+```mermaid
+flowchart LR
+    A[push / PR] --> B[init_test_db]
+    B --> C[dbt deps]
+    C --> D[dbt build<br/>49 steps]
+    D --> E[health_check]
+    E --> F[reconciliation<br/>--ci 0.1%]
+    F --> G[data_contracts<br/>--ci]
+    G --> H[lineage_report<br/>--format json]
+    H --> I{Status}
+    I -->|pass| J[✅ CI verde]
+    I -->|fail| K[❌ Email notificação]
+    K --> L[⬆ Upload artifacts]
+    J --> L
+```
+
+Cada gate pode falhar independentemente. Se falhar, o GitHub notifica por email com link para os logs.
 
 ### Docker
 
