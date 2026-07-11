@@ -1,125 +1,158 @@
-# 🇺🇳 WHO Global Health Observatory (GHO) Data Warehouse & ETL Pipeline
+# WHO Global Health Observatory — Star Schema Analytics
 
-Este projeto implementa um pipeline completo de Engenharia de Dados (ETL) e um Data Warehouse estruturado a partir dos dados públicos de saúde global fornecidos pela **API OData da Organização Mundial da Saúde (OMS / WHO)**.
-
-O objetivo do projeto é construir uma fonte única de verdade (Single Source of Truth) modelada para consultas analíticas de alta performance, utilizando práticas modernas de modelagem dimensional (Star Schema), governança e orquestração de dados.
+Pipeline analítico sobre dados públicos de saúde global da **Organização Mundial da Saúde (WHO GHO API)**, modelado em Star Schema com **dbt + DuckDB**.
 
 ---
 
-## 🏗️ Arquitetura Técnica & Pipeline de Dados
+## Arquitetura
 
-```mermaid
-graph TD
-    API[WHO GHO API - OData JSON] -->|Extract - HTTP Requests| Extract[Ingestão - Python Scripts]
-    Extract -->|JSON/Raw| Lake[Simulated Data Lake - Bronze Zone]
-    
-    subgraph Data Warehouse & Transformation
-        Lake -->|Transform & Schema Cast| Transform[Transform & Model - Python]
-        Transform -->|Load - Star Schema| DW[(Data Warehouse - SQLite)]
-    end
-
-    subgraph Governance & Quality Gate
-        DW -->|Validate Table Integrity| GX[Great Expectations Validation]
-    end
-
-    subgraph Orchestration
-        Airflow[Apache Airflow DAG] -.->|Orquestra e Agenda| Extract
-        Airflow -.->|Dispara Testes de Qualidade| GX
-    end
+```
+┌──────────────────┐     ┌─────────────────┐     ┌──────────────────────┐
+│  WHO GHO API     │────▶│  SQLite (raw)    │────▶│  dbt + DuckDB        │
+│  (OData JSON)    │     │  who_gho.db      │     │  Star Schema (marts) │
+└──────────────────┘     └─────────────────┘     ├──────────────────────┤
+                                                  │ dim_indicator        │
+                                                  │ dim_location         │
+                                                  │ dim_period           │
+                                                  │ dim_sex              │
+                                                  │ fct_observations     │
+                                                  └──────────────────────┘
+                                                           │
+                                                           ▼
+                                                  ┌──────────────────┐
+                                                  │  Testes dbt      │
+                                                  │  32 testes       │
+                                                  │  (unique, not    │
+                                                  │   null, rel.,    │
+                                                  │   accepted val.) │
+                                                  └──────────────────┘
 ```
 
+### Fluxo
+
+1. **Ingestão**: Scripts Python consomem a API OData da OMS e populam um banco SQLite raw (`database/who_gho.db`)
+2. **Transformação (dbt)**: dbt-core com adaptador DuckDB lê o SQLite via extensão `sqlite_scanner` e constrói o Star Schema
+3. **Testes**: 32 testes de dados (unique, not_null, relationships, accepted_values) garantem integridade
+4. **Incremental**: `fct_observations` usa materialização incremental (merge por `observation_id`)
+
 ---
 
-## 📊 Modelagem Dimensional (Kimball Star Schema)
+## Stack
 
-Para otimizar o desempenho de leituras analíticas, os dados foram transformados de estruturas JSON aninhadas e normalizados em um esquema estrela:
+| Camada | Tecnologia |
+|--------|-----------|
+| Transformação | [dbt-core](https://github.com/dbt-labs/dbt-core) 1.11 + [dbt-duckdb](https://github.com/duckdb/dbt-duckdb) 1.10 |
+| Query Engine | [DuckDB](https://duckdb.org/) (OLAP embarcado) |
+| Raw Storage | SQLite (fonte original) |
+| Orquestração | Apache Airflow (opcional) |
+| CI/CD | GitHub Actions |
+| Container | Docker (Python 3.12-slim) |
+
+---
+
+## Modelagem Dimensional (Kimball Star Schema)
 
 ### Tabela Fato
-*   **`fact_observations`**: Centraliza os fatos numéricos medidos pela OMS.
-    *   `observation_id` (PK)
-    *   `indicator_id` (FK ➡️ `dim_indicators`)
-    *   `location_id` (FK ➡️ `dim_locations`)
-    *   `period_id` (FK ➡️ `dim_periods`)
-    *   `sex_id` (FK ➡️ `dim_sex`)
-    *   `value` (Valor numérico da observação)
 
-### Tabelas de Dimensão
-*   **`dim_indicators`**: Metadados estruturais sobre a saúde humana (ex: indicadores de poluição, mortalidade infantil, etc.).
-*   **`dim_locations`**: Informações geográficas dos países, com enriquecimento de dados regionais e continentes.
-*   **`dim_periods`**: Dimensão de tempo para controle cronológico.
+**`fct_observations`** — grão por observação individual
 
----
+| Coluna | Tipo | Descrição |
+|--------|------|-----------|
+| `observation_id` | int | PK natural da fonte |
+| `observation_key` | varchar | Surrogate key (hash) |
+| `indicator_id` | int | FK → `dim_indicator` |
+| `location_id` | int | FK → `dim_location` |
+| `period_id` | int | FK → `dim_period` |
+| `sex_id` | int | FK → `dim_sex` (0 = UNK) |
+| `value` | float | Valor numérico da observação |
 
-## 🔒 Qualidade de Dados (Great Expectations)
+### Dimensões
 
-Para evitar desvio de esquema (*schema drift*) ou ingestão de valores nulos inconsistentes provenientes de atualizações de API, o pipeline de dados utiliza o **Great Expectations**:
-*   **Validação de Metadados**: Garante que os códigos de indicadores e dimensões OData seguem os contratos estabelecidos.
-*   **Validação de Fatos**: Impede que observações de saúde com valores ausentes ou nulos passem silenciosamente para a camada final.
-*   **Relatórios Automatizados**: Relatórios em HTML detalhando a saúde e conformidade dos dados a cada execução de DAG.
-
----
-
-## ⏱️ Orquestração (Apache Airflow)
-
-O pipeline é orquestrado por meio do **Apache Airflow**, com uma DAG (`oms_data_pipeline`) que automatiza as seguintes etapas diárias de processamento:
-1.  Execução do roteiro de ingestão e população dimensional (`populate_database`).
-2.  Disparo em paralelo de três suítes de validação de dados via Great Expectations (`validate_indicators_data`, `validate_categorized_indicators_data`, `validate_dimensions_data`).
+| Tabela | Descrição | Cardinalidade |
+|--------|-----------|--------------|
+| `dim_indicator` | Indicadores de saúde (código, nome, categoria) | ~3K |
+| `dim_location` | Países/regiões (código ISO, nome, região) | ~220 |
+| `dim_period` | Períodos (ano, agrupamento por década) | ~70 |
+| `dim_sex` | Sexo (MLE, FMLE, BTSX, UNK) | 4 |
 
 ---
 
-## 🚀 Como Rodar o Projeto
+## Como Executar
 
-### Pré-requisitos
-* Python 3.11+ instalado.
-* Dependências listadas no `requirements.txt`.
-
-### Configuração do Ambiente
-1. Clone o repositório:
-   ```bash
-   git clone https://github.com/Roberton003/projeto_oms.git
-   cd projeto_oms
-   ```
-2. Crie e ative o ambiente virtual:
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # No Windows: venv\\Scripts\\activate
-   pip install -r requirements.txt
-   ```
-
-3. Inicialize o Banco de Dados e execute a carga inicial:
-   ```bash
-   python scripts/create_database.py
-   python scripts/populate_database.py
-   ```
-
-4. Execute os testes de qualidade de dados:
-   ```bash
-   python scripts/validate_dimensions.py
-   python scripts/validate_categorized_indicators.py
-   ```
-
----
-
-## 📥 Como Obter os Dados
-
-Os dados são obtidos diretamente da **API OData do WHO GHO** (`https://ghoapi.azureedge.net/api/`).
-
-### Ingestão via API
+### Setup rápido
 
 ```bash
-python scripts/coleta_oms.py
+# 1. Clonar
+git clone https://github.com/Roberton003/projeto_oms.git
+cd projeto_oms
+
+# 2. Setup completo
+make setup
+
+# 3. Build (modelos + testes)
+make build
+
+# 4. Apenas testes
+make test
 ```
 
-O script `coleta_oms.py` busca a lista de indicadores e salva em `data/indicators.csv`.
-O pipeline completo (`populate_database.py`) chama a API por indicador — ex. `https://ghoapi.azureedge.net/api/NCDMORT3070` — e popula o star schema em `database/who_gho.db`.
+### Targets disponíveis
 
-### Fixtures de Teste
+| Comando | Descrição |
+|---------|-----------|
+| `make setup` | Cria virtualenv + instala dependências + pacotes dbt |
+| `make build` | Executa `dbt build` (modelos + testes) |
+| `make test` | Executa `dbt test` (apenas testes) |
+| `make run` | Executa `dbt run` (apenas modelos) |
+| `make ci` | CI completo (banco de teste + clean + build) |
+| `make clean` | Limpa artefatos dbt e banco DuckDB |
+| `make shell` | Abre DuckDB shell no banco do target atual |
 
-Os arquivos em `tests/fixtures/` são snapshots dos dados da API para uso em CI/CD:
-- `indicators.csv` — lista de indicadores (251 KB)
-- `categorized_indicators.csv` — indicadores categorizados (268 KB)
-- `dimensions.json` — dimensões da API (11 KB)
-- `regions.json` — regiões da OMS
+### CI/CD
 
-> ⚠️ Dados brutos não são versionados na raiz `data/` — apenas como fixtures em `tests/fixtures/`.
-> Execute `scripts/coleta_oms.py` para refrescar os dados da API.
+```bash
+make ci
+```
+
+O target `ci` cria um banco SQLite sintético (10 observações), limpa artefatos anteriores e executa `dbt build --target ci`. O mesmo fluxo roda no GitHub Actions a cada push.
+
+### Docker
+
+```bash
+docker build -t projeto-oms .
+docker run --rm projeto-oms make ci
+```
+
+---
+
+## Obtenção dos Dados
+
+Os dados são obtidos da API OData do WHO GHO:
+
+```bash
+# Listar indicadores disponíveis
+python scripts/coleta_oms.py
+
+# Pipeline completo de ingestão
+python scripts/populate_database.py
+```
+
+O script `populate_database.py` consome a API da OMS por indicador e popula o banco SQLite `database/who_gho.db`, que é então lido pelo dbt.
+
+> **Fixtures de teste**: `tests/fixtures/` contém snapshots dos dados da API para CI/CD.
+> Dados brutos não são versionados — execute os scripts de ingestão para obtê-los.
+
+---
+
+## Qualidade de Dados
+
+- **32 testes dbt**: unique, not_null, relationships, accepted_values
+- **Great Expectations** (opcional): suítes de validação complementares em `scripts/`
+- **Incremental idempotente**: `fct_observations` com merge por `observation_id`
+
+---
+
+## Licença
+
+Dados: [WHO GHO](https://www.who.int/data/gho) — uso livre com atribuição.
+Código: MIT.

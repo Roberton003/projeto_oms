@@ -64,5 +64,6 @@ database/
 oms_dw/
 AGENTS.md
 
-# --- Prompts de execução de sessão (não são planos do projeto) ---
-docs/plans/PROMPT_EXECUCAO_OPENCODE.md
+# --- Documentos de gestão interna (não fazem parte do código) ---
+docs/plans/
+RELATORIO_EXECUCAO.md
