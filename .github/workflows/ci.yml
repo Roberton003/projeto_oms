@@ -66,17 +66,6 @@ jobs:
       - name: Lineage report
         run: python ../scripts/lineage_report.py --format json --ci
 
-      - name: Notify Slack on failure
-        if: failure()
-        uses: slackapi/slack-github-action@v2
-        with:
-          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
-          webhook-type: incoming-webhook
-          payload: |
-            {
-              "text": "❌ *projeto_oms CI failed* on ${{ github.ref_name }}\nCommit: ${{ github.sha }}\nAuthor: ${{ github.triggering_actor }}\nWorkflow: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-            }
-
       - name: Upload dbt artifacts
         if: always()
         uses: actions/upload-artifact@v4
