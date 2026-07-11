@@ -72,6 +72,18 @@ health: ## Run health check on databases and models
 health-ci: ## Run health check in CI mode (exit 1 on failure)
 	python3 scripts/health_check.py --ci
 
+reconcile: ## Run cross-layer data reconciliation (raw vs staging vs marts)
+	python3 scripts/reconciliation.py
+
+reconcile-ci: ## Run reconciliation in CI mode (exit 1 on diff > tolerance)
+	python3 scripts/reconciliation.py --ci
+
+lineage: ## Show dbt lineage report (requires manifest.json)
+	python3 scripts/lineage_report.py
+
+lineage-tree: ## Show lineage as Mermaid diagram
+	python3 scripts/lineage_report.py --format mermaid
+
 schedule: ## Run scheduled pipeline with logging
 	bash scripts/scheduler.sh
 

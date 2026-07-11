@@ -57,6 +57,12 @@ jobs:
       - name: Health check
         run: python ../scripts/health_check.py
 
+      - name: Cross-layer reconciliation
+        run: python ../scripts/reconciliation.py --ci
+
+      - name: Lineage report
+        run: python ../scripts/lineage_report.py --format json --ci
+
       - name: Upload dbt artifacts
         if: always()
         uses: actions/upload-artifact@v4
