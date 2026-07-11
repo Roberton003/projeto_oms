@@ -40,8 +40,8 @@ Para otimizar o desempenho de leituras analíticas, os dados foram transformados
     *   `indicator_id` (FK ➡️ `dim_indicators`)
     *   `location_id` (FK ➡️ `dim_locations`)
     *   `period_id` (FK ➡️ `dim_periods`)
-    *   `raw_value` (Valor bruto relatado)
-    *   `value` (Valor numérico limpo para agregação)
+    *   `sex_id` (FK ➡️ `dim_sex`)
+    *   `value` (Valor numérico da observação)
 
 ### Tabelas de Dimensão
 *   **`dim_indicators`**: Metadados estruturais sobre a saúde humana (ex: indicadores de poluição, mortalidade infantil, etc.).
@@ -97,3 +97,29 @@ O pipeline é orquestrado por meio do **Apache Airflow**, com uma DAG (`oms_data
    python scripts/validate_dimensions.py
    python scripts/validate_categorized_indicators.py
    ```
+
+---
+
+## 📥 Como Obter os Dados
+
+Os dados são obtidos diretamente da **API OData do WHO GHO** (`https://ghoapi.azureedge.net/api/`).
+
+### Ingestão via API
+
+```bash
+python scripts/coleta_oms.py
+```
+
+O script `coleta_oms.py` busca a lista de indicadores e salva em `data/indicators.csv`.
+O pipeline completo (`populate_database.py`) chama a API por indicador — ex. `https://ghoapi.azureedge.net/api/NCDMORT3070` — e popula o star schema em `database/who_gho.db`.
+
+### Fixtures de Teste
+
+Os arquivos em `tests/fixtures/` são snapshots dos dados da API para uso em CI/CD:
+- `indicators.csv` — lista de indicadores (251 KB)
+- `categorized_indicators.csv` — indicadores categorizados (268 KB)
+- `dimensions.json` — dimensões da API (11 KB)
+- `regions.json` — regiões da OMS
+
+> ⚠️ Dados brutos não são versionados na raiz `data/` — apenas como fixtures em `tests/fixtures/`.
+> Execute `scripts/coleta_oms.py` para refrescar os dados da API.

@@ -1,6 +1,6 @@
+# --- Junk files (already in gitignore index) ---
 linkedin_post.txt
 simple_auth_manager_passwords.json.generated
-database/who_gho.db
 populate_database.log
 scripts/html_to_jpeg.py
 diagram.html
@@ -28,3 +28,29 @@ airflow.db*
 # Arquivos não versionados do Great Expectations
 great_expectations/uncommitted/
 gx/
+
+# --- Dados brutos: versionar apenas fixtures pequenas ---
+# Dados brutos não versionados (mantidos localmente para reprocessamento)
+data/*.csv
+data/*.json
+data/*.parquet
+# Mas preservar fixtures de teste pequenas
+!tests/fixtures/
+
+# --- dbt artifacts ---
+dbt/target/
+dbt/dbt_packages/
+dbt/logs/
+dbt/profiles.yml
+
+# --- DuckDB databases ---
+*.duckdb
+*.duckdb.wal
+
+# --- Dados de ambiente ---
+.env
+.env.local
+
+# --- Docker ---
+Dockerfile
+!.github/
