@@ -28,7 +28,7 @@ RAW_DB = os.environ.get(
     "DBT_RAW_DB",
     os.path.join(PROJECT_DIR, "database", "who_gho.db"),
 )
-TOLERANCE_PCT = float(os.environ.get("RECONCILIATION_TOLERANCE_PCT", "1.0"))
+TOLERANCE_PCT = float(os.environ.get("RECONCILIATION_TOLERANCE_PCT", "0.1"))
 
 
 def connect_raw() -> sqlite3.Connection | None:

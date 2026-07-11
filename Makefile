@@ -72,6 +72,12 @@ health: ## Run health check on databases and models
 health-ci: ## Run health check in CI mode (exit 1 on failure)
 	python3 scripts/health_check.py --ci
 
+contracts: ## Validate data contracts across all layers
+	python3 scripts/data_contracts.py
+
+contracts-ci: ## Validate data contracts in CI mode (exit 1 on failure)
+	python3 scripts/data_contracts.py --ci
+
 reconcile: ## Run cross-layer data reconciliation (raw vs staging vs marts)
 	python3 scripts/reconciliation.py
 

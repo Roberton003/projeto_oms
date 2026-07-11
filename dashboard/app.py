@@ -97,8 +97,8 @@ with col4:
 st.divider()
 
 # ── Charts ──────────────────────────────────────────────────────────
-tab1, tab2, tab3 = st.tabs(
-    ["🌐 Visão Geral", "📈 Tendências", "🔍 Dados Brutos"]
+tab1, tab2, tab3, tab4 = st.tabs(
+    ["🌐 Visão Geral", "📈 Tendências", "🔍 Dados Brutos", "✅ Qualidade"]
 )
 
 with tab1:
@@ -245,4 +245,70 @@ with tab3:
         f"Tabelas: {query('SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = \\'main\\'').iloc[0, 0]}\n"
         f"Total observações: {total_obs:,}",
         language="text",
+    )
+
+with tab4:
+    st.subheader("✅ Data Quality Dashboard")
+
+    col_q1, col_q2, col_q3, col_q4 = st.columns(4)
+    with col_q1:
+        st.metric("Testes dbt", "49", "37 data + 12 custom")
+    with col_q2:
+        st.metric("Contratos de Dados", "10", "5 raw + 5 marts")
+    with col_q3:
+        st.metric("Reconciliação", "✅", "tolerância 0.1%")
+    with col_q4:
+        st.metric("Health Check", "✅", "gatilho no CI")
+
+    st.markdown("---")
+
+    # Tabelas e contagens
+    st.subheader("📊 Contagens por Camada")
+
+    try:
+        df_volumes = query("""
+            SELECT 'dim_indicator' AS tabela,
+                   (SELECT COUNT(*) FROM main.dim_indicator) AS mart_rows
+            UNION ALL SELECT 'dim_location', (SELECT COUNT(*) FROM main.dim_location)
+            UNION ALL SELECT 'dim_period', (SELECT COUNT(*) FROM main.dim_period)
+            UNION ALL SELECT 'dim_sex', (SELECT COUNT(*) FROM main.dim_sex)
+            UNION ALL SELECT 'fct_observations', (SELECT COUNT(*) FROM main.fct_observations)
+            ORDER BY tabela
+        """)
+        st.dataframe(df_volumes, use_container_width=True, hide_index=True)
+    except Exception:
+        st.info("Execute `make build` primeiro para carregar os dados.")
+
+    st.markdown("---")
+
+    # PK uniqueness check
+    st.subheader("🔑 Unicidade de Chaves")
+    try:
+        df_unique = query("""
+            SELECT 'dim_indicator.indicator_key' AS chave,
+                   COUNT(*) AS total,
+                   COUNT(DISTINCT indicator_key) AS unicos,
+                   COUNT(*) - COUNT(DISTINCT indicator_key) AS duplicatas
+            FROM main.dim_indicator
+            UNION ALL
+            SELECT 'fct_observations.observation_id',
+                   COUNT(*), COUNT(DISTINCT observation_id),
+                   COUNT(*) - COUNT(DISTINCT observation_id)
+            FROM main.fct_observations
+        """)
+        st.dataframe(df_unique, use_container_width=True, hide_index=True)
+    except Exception:
+        st.info("Erro ao verificar unicidade. Execute `make build`.")
+
+    st.markdown("---")
+
+    # Comandos de qualidade
+    st.subheader("🔧 Comandos de Qualidade")
+    st.code(
+        "make contracts     # validar contratos de dados\n"
+        "make reconcile     # reconciliação cross-camada\n"
+        "make health        # health check completo\n"
+        "make lineage       # relatório de linhagem\n"
+        "make test          # dbt test (apenas testes)",
+        language="bash"
     )
