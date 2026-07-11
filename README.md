@@ -28,6 +28,53 @@ Pipeline analítico sobre dados públicos de saúde global da **Organização Mu
                                                   └──────────────────┘
 ```
 
+### Ecossistema Completo
+
+```mermaid
+graph TB
+    subgraph Ingestão
+        API[WHO GHO API<br/>OData JSON] -->|Python scripts| RAW[(SQLite<br/>who_gho.db)]
+    end
+
+    subgraph Transformação
+        RAW -->|sqlite_scanner| DBT[dbt build<br/>44 steps]
+        DBT --> DUCK[(DuckDB<br/>Star Schema)]
+    end
+
+    subgraph "Dashboard & Visualização"
+        DUCK --> ST[Streamlit App<br/>make dashboard]
+        ST --> USER[Usuário<br/>localhost:8501]
+    end
+
+    subgraph "Orquestração & CI/CD"
+        CRON[cron<br/>0 8 * * *] --> SH[scripts/scheduler.sh]
+        GH[GitHub Actions<br/>push / PR] --> CI[make ci]
+        AF[Airflow DAG<br/>oms_data_pipeline] --> AF_TASKS[check_raw_db →<br/>dbt_build →<br/>health_check]
+    end
+
+    subgraph Observabilidade
+        HC[scripts/health_check.py] -->|make health| REPORT[Relatório<br/>integridade + volumes]
+        SH --> LOG[(logs/<br/>scheduler.log)]
+        CI --> HC
+        AF_TASKS --> HC
+    end
+
+    subgraph "Empacotamento"
+        DK[Dockerfile] --> |docker build| IMG[projeto-oms<br/>image]
+        IMG --> |docker run| CI
+    end
+
+    style API fill:#e1f5fe
+    style RAW fill:#fff3e0
+    style DBT fill:#e8f5e9
+    style DUCK fill:#e8f5e9
+    style ST fill:#f3e5f5
+    style GH fill:#e3f2fd
+    style AF fill:#e3f2fd
+    style HC fill:#fff8e1
+    style DK fill:#fce4ec
+```
+
 ### Fluxo
 
 1. **Ingestão**: Scripts Python consomem a API OData da OMS e populam um banco SQLite raw (`database/who_gho.db`)
