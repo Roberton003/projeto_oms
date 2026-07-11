@@ -1,6 +1,17 @@
-pandas
-requests
-great-expectations
-sqlalchemy
-tenacity
-apache-airflow
+# Core
+pandas>=2.0
+requests>=2.31
+
+# dbt (data build tool)
+dbt-core>=1.8,<2.0
+dbt-duckdb>=1.8,<2.0
+
+# Orchestration (optional, Airflow)
+apache-airflow>=2.8
+sqlalchemy>=2.0
+
+# Data quality (optional)
+great-expectations>=0.18
+
+# Utils
+tenacity>=8.2

@@ -1,0 +1,35 @@
+# Git
+.git/
+.gitignore
+
+# Python venv
+venv/
+
+# dbt artifacts
+dbt/target/
+dbt/dbt_packages/
+dbt/logs/
+
+# Local databases (mounted as volume)
+*.duckdb
+*.duckdb.wal
+database/
+
+# Tests
+tests/
+
+# Docs
+docs/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Junk
+*.log
+__pycache__/
+*.pyc

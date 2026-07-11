@@ -1,0 +1,63 @@
+name: CI — WHO GHO → dbt Star Schema
+
+on:
+  push:
+    branches: [main, master]
+    paths-ignore:
+      - "**.md"
+      - ".gitignore"
+  pull_request:
+    branches: [main, master]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHON_VERSION: "3.12"
+  DBT_TARGET: ci
+  # Caminho absoluto do banco SQLite fonte
+  DBT_RAW_DB: ${{ github.workspace }}/database/who_gho.db
+
+jobs:
+  dbt-build:
+    name: dbt build (ci target)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+        # dbt 1.11 exige executar de dentro do diretório do projeto
+        working-directory: dbt
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r ../requirements.txt
+          pip install --quiet dbt-core dbt-duckdb
+
+      - name: Create test database
+        run: python ../scripts/init_test_db.py --db-path "$DBT_RAW_DB"
+
+      - name: Install dbt packages
+        run: dbt deps
+
+      - name: dbt build
+        run: dbt build --target ci
+
+      - name: Upload dbt artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dbt-artifacts
+          path: dbt/target/
+          retention-days: 7

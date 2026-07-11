@@ -1,0 +1,29 @@
+name: 'oms_dw'
+version: '1.0.0'
+config-version: 2
+
+profile: 'oms_dw'
+
+model-paths: ["models"]
+test-paths: ["tests"]
+analysis-paths: ["analyses"]
+macro-paths: ["macros"]
+seed-paths: ["seeds"]
+
+target-path: "target"
+clean-targets:
+  - "target"
+  - "dbt_packages"
+  - "logs"
+
+require-dbt-version: [">=1.8.0", "<2.0.0"]
+
+models:
+  oms_dw:
+    staging:
+      +materialized: view
+    marts:
+      +materialized: table
+
+on-run-start:
+  - "ATTACH IF NOT EXISTS '{{ env_var('DBT_RAW_DB', '../database/who_gho.db') }}' AS raw_db (TYPE SQLITE)"

@@ -1,0 +1,24 @@
+# profiles.yml — dbt DuckDB para WHO GHO
+# targets: dev (local), ci (CI/CD)
+#
+# DBT_RAW_DB: caminho para o banco SQLite fonte
+#   (default: database/who_gho.db relativo ao project-dir)
+#
+# Uso:
+#   export DBT_RAW_DB=/path/to/who_gho.db
+#   dbt build --target dev
+#   dbt build --target ci
+
+oms_dw:
+  target: "{{ env_var('DBT_TARGET', 'dev') }}"
+  outputs:
+    dev:
+      type: duckdb
+      path: "{{ env_var('DBT_DUCKDB_PATH', 'oms_dw.duckdb') }}"
+      extensions:
+        - sqlite_scanner
+    ci:
+      type: duckdb
+      path: "{{ env_var('DBT_DUCKDB_PATH', 'oms_dw_ci.duckdb') }}"
+      extensions:
+        - sqlite_scanner

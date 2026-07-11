@@ -1,0 +1,66 @@
+version: 2
+
+sources:
+  - name: raw_db
+    database: raw_db
+    schema: main
+    description: "Camada raw — banco SQLite original da ingestão via scripts/coleta_oms.py"
+
+    tables:
+      - name: dim_indicators
+        description: "Indicadores da OMS carregados da API"
+        columns:
+          - name: indicator_id
+            description: "PK surrogate"
+          - name: indicator_code
+            description: "Código único do indicador (ex: NCDMORT3070)"
+          - name: indicator_name
+            description: "Nome descritivo"
+          - name: category
+            description: "Categoria do indicador (ex: NCD, AIR)"
+
+      - name: dim_locations
+        description: "Países e regiões"
+        columns:
+          - name: location_id
+            description: "PK surrogate"
+          - name: country_code
+            description: "Código ISO do país (ex: BRA)"
+          - name: country_name
+            description: "Nome do país"
+          - name: region_code
+            description: "Código da região OMS"
+
+      - name: dim_periods
+        description: "Períodos de tempo"
+        columns:
+          - name: period_id
+            description: "PK surrogate"
+          - name: year
+            description: "Ano da observação"
+
+      - name: dim_sex
+        description: "Dimensão de sexo"
+        columns:
+          - name: sex_id
+            description: "PK surrogate"
+          - name: sex_code
+            description: "Código (MLE, FMLE, BTSX)"
+          - name: sex_name
+            description: "Nome (Male, Female, Both sexes)"
+
+      - name: fact_observations
+        description: "Observações numéricas dos indicadores por país/período/sexo"
+        columns:
+          - name: observation_id
+            description: "PK"
+          - name: indicator_id
+            description: "FK → dim_indicators"
+          - name: location_id
+            description: "FK → dim_locations"
+          - name: period_id
+            description: "FK → dim_periods"
+          - name: sex_id
+            description: "FK → dim_sex"
+          - name: value
+            description: "Valor numérico da observação"

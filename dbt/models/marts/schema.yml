@@ -1,0 +1,133 @@
+version: 2
+
+models:
+  - name: dim_indicator
+    description: "Dimensão de indicadores de saúde da OMS"
+    columns:
+      - name: indicator_key
+        description: "Chave surrogate (hash do indicator_code)"
+        tests:
+          - unique
+          - not_null
+      - name: indicator_code
+        description: "Código único do indicador (ex: NCDMORT3070)"
+        tests:
+          - unique
+          - not_null
+      - name: category
+        description: "Categoria do indicador"
+        tests:
+          - not_null
+
+  - name: dim_location
+    description: "Dimensão de localização geográfica"
+    columns:
+      - name: location_key
+        description: "Chave surrogate (hash do country_code)"
+        tests:
+          - unique
+          - not_null
+      - name: country_code
+        description: "Código ISO do país"
+        tests:
+          - unique
+          - not_null
+
+  - name: dim_period
+    description: "Dimensão de período (ano)"
+    columns:
+      - name: period_key
+        description: "Chave surrogate (hash do year)"
+        tests:
+          - unique
+          - not_null
+      - name: year
+        description: "Ano da observação"
+        tests:
+          - unique
+          - not_null
+      - name: decade_group
+        description: "Agrupamento por década"
+        tests:
+          - accepted_values:
+              arguments:
+                values: ['before_2000', '2000s', '2010s', '2020s']
+
+  - name: dim_sex
+    description: "Dimensão de sexo"
+    columns:
+      - name: sex_key
+        description: "Chave surrogate (hash do sex_code)"
+        tests:
+          - unique
+          - not_null
+      - name: sex_code
+        description: "Código do sexo (MLE, FMLE, BTSX, UNK)"
+        tests:
+          - unique
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['MLE', 'FMLE', 'BTSX', 'UNK']
+
+  - name: fct_observations
+    description: "Tabela fato de observações de saúde — grão por observation_id"
+    columns:
+      - name: observation_id
+        description: "PK natural da fonte (SQLite)"
+        tests:
+          - unique
+          - not_null
+      - name: observation_key
+        description: "Chave surrogate (hash do observation_id)"
+        tests:
+          - unique
+          - not_null
+      - name: indicator_id
+        description: "FK natural → dim_indicator"
+        tests:
+          - not_null
+      - name: location_id
+        description: "FK natural → dim_location"
+        tests:
+          - not_null
+      - name: period_id
+        description: "FK natural → dim_period"
+        tests:
+          - not_null
+      - name: sex_id
+        description: "FK natural → dim_sex (0 = UNK)"
+        tests:
+          - not_null
+      - name: value
+        description: "Valor numérico da observação"
+        tests:
+          - not_null
+      - name: indicator_key
+        description: "FK surrogate → dim_indicator"
+        tests:
+          - relationships:
+              arguments:
+                to: ref('dim_indicator')
+                field: indicator_key
+      - name: location_key
+        description: "FK surrogate → dim_location"
+        tests:
+          - relationships:
+              arguments:
+                to: ref('dim_location')
+                field: location_key
+      - name: period_key
+        description: "FK surrogate → dim_period"
+        tests:
+          - relationships:
+              arguments:
+                to: ref('dim_period')
+                field: period_key
+      - name: sex_key
+        description: "FK surrogate → dim_sex"
+        tests:
+          - relationships:
+              arguments:
+                to: ref('dim_sex')
+                field: sex_key

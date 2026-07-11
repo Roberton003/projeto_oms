@@ -41,7 +41,10 @@ data/*.parquet
 dbt/target/
 dbt/dbt_packages/
 dbt/logs/
-dbt/profiles.yml
+# profiles.yml versionado (portável com env vars)
+# dbt/profiles.yml
+# dbt generated user config
+dbt/.user.yml
 
 # --- DuckDB databases ---
 *.duckdb
@@ -51,6 +54,15 @@ dbt/profiles.yml
 .env
 .env.local
 
-# --- Docker ---
-Dockerfile
-!.github/
+# --- Docker (artefatos gerados) ---
+# Dockerfile is versioned (portável para CI/CD)
+# !.github/
+
+# --- Diretórios locais não versionados ---
+database/
+.serena/
+oms_dw/
+AGENTS.md
+
+# --- Prompts de execução de sessão (não são planos do projeto) ---
+docs/plans/PROMPT_EXECUCAO_OPENCODE.md
