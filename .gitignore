@@ -65,8 +65,6 @@ oms_dw/
 AGENTS.md
 
 # --- Documentos de gestão interna (não fazem parte do código) ---
-# docs/plans/ é versionado (planos de evolução, ADRs)
-# Mas os documentos de sessão/prompt específicos não são:
-docs/plans/PRD_profissionalizacao.md
-docs/plans/PROMPT_EXECUCAO_OPENCODE.md
+# docs/plans/ contém planos de evolução e ADRs locais (não versionados)
+docs/plans/
 RELATORIO_EXECUCAO.md
