@@ -13,5 +13,9 @@ sqlalchemy>=2.0
 # Data quality (optional)
 great-expectations>=0.18
 
+# Dashboard
+streamlit>=1.35
+plotly>=5.18
+
 # Utils
 tenacity>=8.2

@@ -34,6 +34,8 @@ Pipeline analítico sobre dados públicos de saúde global da **Organização Mu
 2. **Transformação (dbt)**: dbt-core com adaptador DuckDB lê o SQLite via extensão `sqlite_scanner` e constrói o Star Schema
 3. **Testes**: 32 testes de dados (unique, not_null, relationships, accepted_values) garantem integridade
 4. **Incremental**: `fct_observations` usa materialização incremental (merge por `observation_id`)
+5. **Observabilidade**: Health check automatizado verifica integridade referencial, volumes e freshness
+6. **Dashboard**: Streamlit conectado ao DuckDB para visualização analítica interativa
 
 ---
 
@@ -44,9 +46,10 @@ Pipeline analítico sobre dados públicos de saúde global da **Organização Mu
 | Transformação | [dbt-core](https://github.com/dbt-labs/dbt-core) 1.11 + [dbt-duckdb](https://github.com/duckdb/dbt-duckdb) 1.10 |
 | Query Engine | [DuckDB](https://duckdb.org/) (OLAP embarcado) |
 | Raw Storage | SQLite (fonte original) |
-| Orquestração | Apache Airflow (opcional) |
-| CI/CD | GitHub Actions |
-| Container | Docker (Python 3.12-slim) |
+| Dashboard | [Streamlit](https://streamlit.io/) + [Plotly](https://plotly.com/) |
+| Orquestração | [Apache Airflow](https://airflow.apache.org/) (opcional) / cron |
+| CI/CD | GitHub Actions + Docker |
+| Observabilidade | Health check automatizado (integridade, volumes, freshness) |
 
 ---
 
@@ -106,6 +109,9 @@ make test
 | `make run` | Executa `dbt run` (apenas modelos) |
 | `make ci` | CI completo (banco de teste + clean + build) |
 | `make clean` | Limpa artefatos dbt e banco DuckDB |
+| `make health` | Health check: integridade, volumes, freshness |
+| `make dashboard` | Abre o Streamlit Dashboard no navegador |
+| `make schedule` | Executa o pipeline agendado com logging |
 | `make shell` | Abre DuckDB shell no banco do target atual |
 
 ### CI/CD
@@ -144,9 +150,81 @@ O script `populate_database.py` consome a API da OMS por indicador e popula o ba
 
 ---
 
+## Dashboard Analítico
+
+```bash
+make dashboard
+```
+
+Dashboard interativo com Streamlit + Plotly conectado diretamente ao DuckDB:
+
+- **Visão Geral**: KPIs (total de observações, indicadores, países, período), distribuição por categoria
+- **Tendências**: Evolução temporal com séries por categoria, top países e indicadores
+- **Dados Brutos**: Amostra da tabela fato com joins para exploração
+
+Acesso: `http://localhost:8501`
+
+---
+
+## Agendamento (Scheduler)
+
+### Cron (leve, sem dependências)
+
+```bash
+# Execução única
+bash scripts/scheduler.sh
+
+# Agendar no crontab (diário às 8h)
+0 8 * * * /path/to/projeto_oms/scripts/scheduler.sh --ci >> /path/to/projeto_oms/logs/scheduler.log 2>&1
+```
+
+### Apache Airflow (orquestração completa)
+
+```bash
+pip install apache-airflow
+export AIRFLOW_HOME=$(pwd)/airflow
+mkdir -p $AIRFLOW_HOME/dags
+ln -s $(pwd)/dags/oms_data_pipeline.py $AIRFLOW_HOME/dags/
+airflow standalone
+```
+
+A DAG `oms_data_pipeline` executa: `check_raw_db → dbt_build → health_check` em sequência diária.
+
+---
+
+## Observabilidade
+
+### Health Check
+
+```bash
+make health          # relatório detalhado em texto
+make health-ci       # exit 1 se algo errado (para CI gates)
+```
+
+O health check verifica:
+
+| Verificação | O que detecta |
+|-------------|---------------|
+| Existência do raw DB | Banco SQLite ausente ou corrompido |
+| Tamanho e freshness | Staleness (dados desatualizados) |
+| Contagem de linhas | Variação anômala de volume |
+| Integridade referencial | Órfãos nas FKs da tabela fato |
+| Existência do DuckDB | Build dbt nunca executado |
+
+### CI/CD com health gate
+
+No GitHub Actions, o health check roda como gate pós-build. Falha no health check = CI vermelho, com artefatos preservados para diagnóstico.
+
+### Logs estruturados
+
+O scheduler gera logs em JSON Lines (`logs/scheduler.log`) para ingestão em sistemas de log centralizado (ELK, Grafana Loki, etc.).
+
+---
+
 ## Qualidade de Dados
 
 - **32 testes dbt**: unique, not_null, relationships, accepted_values
+- **Health check automatizado**: verificação de integridade referencial e freshness
 - **Great Expectations** (opcional): suítes de validação complementares em `scripts/`
 - **Incremental idempotente**: `fct_observations` com merge por `observation_id`
 

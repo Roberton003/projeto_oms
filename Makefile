@@ -66,6 +66,18 @@ ci: ## Run full CI build (target=ci, with test DB init + clean state)
 # Nota: make build/test/run/deps executam dbt de dentro do diretório dbt/.
 # Isso é necessário porque dbt 1.11 não tem suporte a --project-dir.  
 
+health: ## Run health check on databases and models
+	python3 scripts/health_check.py
+
+health-ci: ## Run health check in CI mode (exit 1 on failure)
+	python3 scripts/health_check.py --ci
+
+schedule: ## Run scheduled pipeline with logging
+	bash scripts/scheduler.sh
+
+dashboard: ## Launch Streamlit analytics dashboard
+	$(VENV_DIR)/bin/streamlit run dashboard/app.py
+
 shell: ## Open DuckDB shell on the dbt database (dev target)
 	@DB_FILE=$$(grep -A1 '$(DBT_TARGET):' $(DBT_PROFILES_DIR)/profiles.yml | tail -1 | awk '{print $$2}' | sed 's/"//g'); \
 	if [ -n "$$DB_FILE" ] && [ -f "$(DBT_DIR)/$$DB_FILE" ]; then \
